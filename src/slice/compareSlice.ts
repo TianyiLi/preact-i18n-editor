@@ -9,6 +9,8 @@ const compareEleAdapter = createEntityAdapter<ICompareEle>({
 const INITIAL_STATE = {
   ...compareEleAdapter.getInitialState(),
   isComparing: false,
+  groupLocale: false,
+  localSetup: {} as Record<string, true>,
   useIndex: [] as number[],
 };
 
@@ -21,6 +23,22 @@ const compareSlice = createSlice({
     },
     setContent(state, { payload }: { payload: ICompareEle[] }) {
       compareEleAdapter.setAll(state, payload);
+    },
+    toggleGroupLocale(state) {
+      state.groupLocale = !state.groupLocale;
+    },
+    addLocale(state, { payload }: { payload: string }) {
+      state.localSetup[payload] = true;
+    },
+    removeLocale(state, { payload }: { payload: string }) {
+      delete state.localSetup[payload];
+    },
+    setLocale(state, { payload }: { payload: { id: number; locale?: string } }) {
+      if (payload.locale) {
+        state.entities[payload.id]!.expectedLocale = payload.locale;
+      } else {
+        delete state.entities[payload.id]!.expectedLocale
+      }
     },
     toggleUsedIndex(state, { payload }: { payload: number }) {
       if (state.useIndex.includes(payload)) {
@@ -62,7 +80,7 @@ const compareSlice = createSlice({
   },
 });
 
-const {
+export const {
   reducer,
   actions: {
     setIsComparing: setIsComparingAction,
@@ -72,18 +90,12 @@ const {
     removeContent: removeContentAction,
     toggleUsedIndex: toggleUsedIndexAction,
     swap: swapAction,
+    setLocale: setLocaleAction,
+    addLocale: addLocaleAction,
+    removeLocale: removeLocaleAction,
   },
 } = compareSlice;
-export {
-  reducer as compareReducer,
-  setIsComparingAction,
-  setContentAction,
-  copyToAction,
-  changeContentAction,
-  removeContentAction,
-  toggleUsedIndexAction,
-  swapAction,
-};
+export { reducer as compareReducer };
 export const { selectById: selectContentById } = compareEleAdapter.getSelectors(
   (state: RootState) => state.compare
 );
