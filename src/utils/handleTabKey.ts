@@ -41,7 +41,6 @@ export default function handleTabKey(
           alreadyEmmet = true;
         }
       }
-      console.log(alreadyEmmet);
       if (!alreadyEmmet) {
         e.target.value =
           e.target.value.slice(0, _start) + '\t' + e.target.value.slice(_end);

@@ -1,24 +1,18 @@
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { selectTotalFileAmount } from '../slice/fileSlice';
 
-import { range } from 'lodash-es';
-import { SelectFile } from '../components/FileSelect';
 import { setIsComparingAction } from '../slice/compareSlice';
+import LocaleGrouping from '../components/LocaleGrouping';
+import FileWithLocale from '../components/FileWithLocale';
 
 export const FileContainer = () => {
-  const totalFileIds = useAppSelector(selectTotalFileAmount);
-  const idsRange = range(totalFileIds);
+  const isComparing = useAppSelector((state) => state.compare.isComparing);
 
   const dispatch = useAppDispatch();
-
+  if (isComparing) return <></>;
   return (
     <>
-      <div className="flex gap:12px w:100vh flex:wrap">
-        {idsRange.map((id) => (
-          <SelectFile key={id} id={id} />
-        ))}
-        <SelectFile />
-      </div>
+      <LocaleGrouping />
+      <FileWithLocale />
       <button onClick={() => dispatch(setIsComparingAction(true))}>
         submit
       </button>

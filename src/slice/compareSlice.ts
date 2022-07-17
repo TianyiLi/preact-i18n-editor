@@ -9,9 +9,11 @@ const compareEleAdapter = createEntityAdapter<ICompareEle>({
 const INITIAL_STATE = {
   ...compareEleAdapter.getInitialState(),
   isComparing: false,
-  groupLocale: false,
-  localSetup: {} as Record<string, true>,
-  useIndex: [] as number[],
+  namespaceSetup: {} as Record<string, Record<string, number>>,
+  totalNamespace: [] as string[],
+  totalLocales: [] as string[],
+  usedNamespace: [] as string[],
+  usedLocale: [] as string[],
 };
 
 const compareSlice = createSlice({
@@ -22,42 +24,59 @@ const compareSlice = createSlice({
       state.isComparing = payload;
     },
     setContent(state, { payload }: { payload: ICompareEle[] }) {
-      compareEleAdapter.setAll(state, payload);
-    },
-    toggleGroupLocale(state) {
-      state.groupLocale = !state.groupLocale;
-    },
-    addLocale(state, { payload }: { payload: string }) {
-      state.localSetup[payload] = true;
-    },
-    removeLocale(state, { payload }: { payload: string }) {
-      delete state.localSetup[payload];
-    },
-    setLocale(state, { payload }: { payload: { id: number; locale?: string } }) {
-      if (payload.locale) {
-        state.entities[payload.id]!.expectedLocale = payload.locale;
-      } else {
-        delete state.entities[payload.id]!.expectedLocale
+      compareEleAdapter.upsertMany(state, payload);
+      payload.forEach((item) => {
+        state.namespaceSetup[item.fileName] ??= {};
+        state.namespaceSetup[item.fileName][item.expectedLocale] = item.id;
+      });
+      if (state.ids.length) {
+        state.totalNamespace = [
+          ...new Set(state.ids.map((id) => state.entities[id]!.fileName)),
+        ];
+        state.totalLocales = [
+          ...new Set(state.ids.map((id) => state.entities[id]!.expectedLocale)),
+        ];
       }
     },
-    toggleUsedIndex(state, { payload }: { payload: number }) {
-      if (state.useIndex.includes(payload)) {
-        state.useIndex = state.useIndex.filter((x) => x !== payload);
+    toggleUsedAllNamespace(state) {
+      if (state.usedNamespace.length === state.totalNamespace.length) {
+        state.usedNamespace = [];
       } else {
-        state.useIndex.push(payload);
+        state.usedNamespace = state.totalNamespace;
       }
     },
-    removeContent(state, { payload }: { payload: number }) {
-      compareEleAdapter.removeOne(state, payload);
-      state.useIndex = state.useIndex.filter((x) => x !== payload);
+    toggleUsedAllLocale(state) {
+      if (state.usedLocale.length === state.totalLocales.length) {
+        state.usedLocale = [];
+      } else {
+        state.usedLocale = state.totalLocales;
+      }
+    },
+    toggleUsedNamespace(state, { payload }: { payload: string }) {
+      if (state.usedNamespace.includes(payload)) {
+        state.usedNamespace = state.usedNamespace.filter((x) => x !== payload);
+      } else {
+        state.usedNamespace.push(payload);
+      }
+    },
+    toggleUsedLocale(state, { payload }: { payload: string }) {
+      if (state.usedLocale.includes(payload)) {
+        state.usedLocale = state.usedLocale.filter((x) => x !== payload);
+      } else {
+        state.usedLocale.push(payload);
+      }
     },
     copyTo(
       state,
       { payload: { id, key } }: { payload: { id: number; key: string } }
     ) {
-      const sourceIndex = state.useIndex[0];
-      if (sourceIndex === undefined) return;
-      const source = state.entities[sourceIndex]!.content;
+      const sourceNamespaceIndex = state.usedNamespace[0];
+      const sourceLocaleIndex = state.usedLocale[0];
+      if (sourceNamespaceIndex === undefined && sourceLocaleIndex === undefined)
+        return;
+      const sourceId =
+        state.namespaceSetup[sourceNamespaceIndex][sourceLocaleIndex];
+      const source = state.entities[sourceId]!.content;
 
       state.entities[id]!.content[key] = source[key];
     },
@@ -71,10 +90,16 @@ const compareSlice = createSlice({
     ) {
       state.entities[id]!.content[key] = value;
     },
-    swap(state, { payload }: { payload: [number, number] }) {
-      [state.useIndex[payload[0]], state.useIndex[payload[1]]] = [
-        state.useIndex[payload[1]],
-        state.useIndex[payload[0]],
+    swapNamespace(state, { payload }: { payload: [number, number] }) {
+      [state.usedNamespace[payload[0]], state.usedNamespace[payload[1]]] = [
+        state.usedNamespace[payload[1]],
+        state.usedNamespace[payload[0]],
+      ];
+    },
+    swapLocale(state, { payload }: { payload: [number, number] }) {
+      [state.usedLocale[payload[0]], state.usedLocale[payload[1]]] = [
+        state.usedLocale[payload[1]],
+        state.usedLocale[payload[0]],
       ];
     },
   },
@@ -87,12 +112,12 @@ export const {
     setContent: setContentAction,
     copyTo: copyToAction,
     changeContent: changeContentAction,
-    removeContent: removeContentAction,
-    toggleUsedIndex: toggleUsedIndexAction,
-    swap: swapAction,
-    setLocale: setLocaleAction,
-    addLocale: addLocaleAction,
-    removeLocale: removeLocaleAction,
+    toggleUsedAllNamespace: toggleUsedAllNamespaceAction,
+    toggleUsedAllLocale: toggleUsedAllLocaleAction,
+    toggleUsedNamespace: toggleUsedNamespaceAction,
+    toggleUsedLocale: toggleUsedLocaleAction,
+    swapNamespace: swapNamespaceAction,
+    swapLocale: swapLocaleAction,
   },
 } = compareSlice;
 export { reducer as compareReducer };
