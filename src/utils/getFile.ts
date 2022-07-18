@@ -1,5 +1,5 @@
 import json5 from 'json5';
-
+import { set} from 'lodash-es'
 function getPairs(child = {}, parents = ''): Record<string, string> {
   if (child instanceof Array) {
     return child.reduce((prev, ele, index) => {
@@ -40,4 +40,11 @@ export async function getFile(f: File) {
   });
   const data = getPairs(json5.parse(result));
   return data;
+}
+
+export function genBack(obj: Record<string, string>) {
+  return Object.entries(obj)
+    .reduce((target, current) => {
+      return set(target, current[0], current[1]);
+    }, {})
 }

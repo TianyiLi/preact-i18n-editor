@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { changeContentAction } from '../slice/compareSlice';
 import TextArea from './TextArea';
 import copy from 'copy-to-clipboard';
+import { genBack } from '../utils/getFile';
 
 interface IProps {
   namespace: string;
@@ -50,7 +51,7 @@ export default function ContentEditable({ namespace }: IProps) {
   function onExportClick(locale: string) {
     const content = entities[tree[locale]]?.content;
     if (!content) return;
-    const json = JSON.stringify(content, null, 2);
+    const json = JSON.stringify(genBack(content), null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -63,7 +64,7 @@ export default function ContentEditable({ namespace }: IProps) {
   function onCopy(locale: string) {
     const content = entities[tree[locale]]?.content;
     if (!content) return;
-    copy(JSON.stringify(content, null, 2));
+    copy(JSON.stringify(genBack(content), null, 2));
     alert('Copied!');
   }
 
