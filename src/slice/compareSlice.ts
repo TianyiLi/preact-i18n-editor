@@ -1,6 +1,13 @@
-import { createEntityAdapter, createSlice } from '@reduxjs/toolkit';
+import {
+  createAsyncThunk,
+  createEntityAdapter,
+  createSlice,
+} from '@reduxjs/toolkit';
 import { RootState } from '../store';
 import { ICompareEle } from '../types/ICompareEle';
+import { genBack } from '../utils/getFile';
+
+import copy from 'copy-to-clipboard';
 
 const compareEleAdapter = createEntityAdapter<ICompareEle>({
   selectId: (compareEle) => compareEle.id,
@@ -15,6 +22,37 @@ const INITIAL_STATE = {
   usedNamespace: [] as string[],
   usedLocale: [] as string[],
 };
+
+export const exportAction = createAsyncThunk<
+  void,
+  number,
+  {
+    state: RootState;
+  }
+>('compareSlice/export', async (id, thunkApi) => {
+  const content = thunkApi.getState().compare.entities[id]!.content;
+
+  const blob = new Blob([JSON.stringify(genBack(content))], {
+    type: 'application/json',
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'export.json';
+  link.click();
+  URL.revokeObjectURL(url);
+});
+
+export const copyAction = createAsyncThunk<void, number, { state: RootState }>(
+  'compare/copy',
+  (id, thunkApi) => {
+    const content = thunkApi.getState().compare.entities[id]!.content;
+
+    if (!content) return;
+    copy(JSON.stringify(genBack(content), null, 2));
+    alert('Copied!');
+  }
+);
 
 const compareSlice = createSlice({
   name: 'compare',

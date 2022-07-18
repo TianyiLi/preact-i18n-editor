@@ -1,18 +1,27 @@
+import { xor } from 'lodash-es';
 import { useEffect } from 'preact/hooks';
+import { shallowEqual } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
+
 import ContentEditTables from '../components/ContentEditTables';
 import SelectWrap from '../components/SelectWrap';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { setContentAction } from '../slice/compareSlice';
 import { selectAllContent } from '../slice/fileSlice';
-import { xor } from 'lodash-es';
+import { RootState } from '../store';
+
+const structSelector = createStructuredSelector({
+  files: selectAllContent,
+  localeSetup: (state:RootState) => state.file.localeSetup,
+  nameInUsed: (state:RootState) => state.file.nameInUsed,
+  maximum: (state:RootState) => state.file.maximumLocale,
+});
+
 export default function SelectContainer() {
   const dispatch = useAppDispatch();
-  const files = useAppSelector(selectAllContent);
-  const localeSetup = useAppSelector((state) => state.file.localeSetup);
-  const nameInUsed = useAppSelector((state) => state.file.nameInUsed);
-  const maximum = useAppSelector((state) => state.file.maximumLocale);
+  const { files, localeSetup, nameInUsed, maximum } =
+    useAppSelector(structSelector, shallowEqual);
   const isCompare = useAppSelector((state) => state.compare.isComparing);
-
   useEffect(() => {
     if (!isCompare) return;
     const arr = [...files];

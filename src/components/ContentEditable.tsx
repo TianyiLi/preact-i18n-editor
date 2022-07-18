@@ -1,45 +1,44 @@
 import { useMemo } from 'preact/hooks';
+
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { changeContentAction } from '../slice/compareSlice';
+import { changeContentAction, copyAction, exportAction } from '../slice/compareSlice';
+import { RootState } from '../store';
 import TextArea from './TextArea';
-import copy from 'copy-to-clipboard';
-import { genBack } from '../utils/getFile';
 
 interface IProps {
   namespace: string;
 }
+
 export default function ContentEditable({ namespace }: IProps) {
-  const { tree, entities, usedLocale } = useAppSelector(
-    (state) => ({
-      tree: state.compare.namespaceSetup[namespace],
-      usedLocale: state.compare.usedLocale,
-      entities: state.compare.entities,
-    }),
-    (prev, next) =>
-      prev.tree === next.tree && prev.usedLocale === next.usedLocale
+  const tree = useAppSelector(
+    (state: RootState) => state.compare.namespaceSetup[namespace]
   );
+  const leadEntities = useAppSelector(
+    (state: RootState) =>
+      state.compare.entities[
+        state.compare.namespaceSetup[namespace][state.compare.usedLocale[0]]
+      ]!
+  );
+  const usedLocale = useAppSelector((state) => state.compare.usedLocale);
 
   const leadingLocaleIndex = useAppSelector(
     (state) => tree[state.compare.usedLocale[0]]
   );
   const ids = usedLocale.map((locale) => tree[locale]);
-
   const contentList = useMemo(() => {
-    const leadingContent = entities[leadingLocaleIndex]?.content;
+    const leadingContent = leadEntities.content;
     if (!leadingContent) return [];
     return Object.entries(leadingContent).map(([trName, value]) => {
       return [
         trName,
         value,
         ...ids.slice(1).map((id, i) => {
-          const content = entities[id]?.content;
           return {
-            value: content?.[trName] ?? '',
             id,
             locale: usedLocale[i + 1],
           };
         }),
-      ] as [string, string, ...{ value: string; id: number; locale: string }[]];
+      ] as [string, string, ...{ id: number; locale: string }[]];
     });
   }, [tree, leadingLocaleIndex, usedLocale]);
 
@@ -49,23 +48,11 @@ export default function ContentEditable({ namespace }: IProps) {
   }
 
   function onExportClick(locale: string) {
-    const content = entities[tree[locale]]?.content;
-    if (!content) return;
-    const json = JSON.stringify(genBack(content), null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = namespace;
-    a.click();
-    URL.revokeObjectURL(url);
+    dispatch(exportAction(tree[locale]));
   }
 
   function onCopy(locale: string) {
-    const content = entities[tree[locale]]?.content;
-    if (!content) return;
-    copy(JSON.stringify(genBack(content), null, 2));
-    alert('Copied!');
+    dispatch(copyAction(tree[locale]));
   }
 
   return (
@@ -95,10 +82,11 @@ export default function ContentEditable({ namespace }: IProps) {
             <tr key={trName}>
               <td>{trName}</td>
               <td>{leadingValue}</td>
-              {rest.map(({ value, id, locale }) => (
+              {rest.map(({ id, locale }) => (
                 <td key={id + trName}>
                   <TextArea
-                    defaultValue={value}
+                    id={id}
+                    attrKey={trName}
                     leadingValue={leadingValue}
                     locale={[usedLocale[0], locale]}
                     onChange={onColValueChange.bind(null, id, trName)}

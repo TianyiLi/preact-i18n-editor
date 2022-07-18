@@ -2,9 +2,7 @@ import { useAppSelector } from '../hooks/redux';
 import ContentEditable from './ContentEditable';
 
 export default function ContentEditTables() {
-  const { usedNamespace } = useAppSelector((state) => ({
-    usedNamespace: state.compare.usedNamespace,
-  }));
+  const usedNamespace = useAppSelector((state) => state.compare.usedNamespace);
 
   return (
     <div>

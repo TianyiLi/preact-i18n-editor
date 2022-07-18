@@ -1,33 +1,27 @@
-import { useEffect, useRef } from 'preact/hooks';
+import { useAppSelector } from '../hooks/redux';
 import googleTranslateSuggest from '../utils/googleTranslateSuggest';
 import handleTabKey from '../utils/handleTabKey';
 
 export default function TextArea(props: {
-  defaultValue: string;
+  id: number;
+  attrKey: string;
   leadingValue: string;
   locale: [string, string];
   onChange(str: string): void;
 }) {
-  const ref = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    if (ref.current) {
-      ref.current.value = props.defaultValue;
-    }
-  }, [props.defaultValue]);
+  const { id, leadingValue, locale, onChange, attrKey } = props;
+  const defaultValue = useAppSelector(state => state.compare.entities[id]?.content[attrKey] ?? '')
 
   function onCopy(e: MouseEvent) {
     e.preventDefault();
-    if (ref.current) {
-      ref.current.value = props.leadingValue;
-      props.onChange(props.leadingValue);
-    }
+    props.onChange(leadingValue);
   }
 
   function onTranslateSuggest() {
     const {
       locale: [leadLocale, targetLocale],
     } = props;
-    googleTranslateSuggest(leadLocale, targetLocale, props.leadingValue);
+    googleTranslateSuggest(leadLocale, targetLocale, leadingValue);
   }
 
   return (
@@ -35,8 +29,7 @@ export default function TextArea(props: {
       <textarea
         rows={5}
         className="border:1px|solid|gray-58 w:full"
-        ref={ref}
-        defaultValue={props.defaultValue}
+        defaultValue={defaultValue}
         onChange={(e) => props.onChange(e.currentTarget.value)}
         onKeyDown={handleTabKey}
       />
