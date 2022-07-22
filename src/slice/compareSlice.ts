@@ -141,6 +141,15 @@ const compareSlice = createSlice({
       ];
     },
   },
+  extraReducers(builder) {
+    builder
+      .addCase(exportAction.rejected, (state, action) => {
+        console.error(action.error.message);
+      })
+      .addCase(copyAction.rejected, (state, action) => {
+        console.error(action.error.message);
+      });
+  },
 });
 
 export const {
