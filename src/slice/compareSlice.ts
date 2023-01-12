@@ -31,14 +31,16 @@ export const exportAction = createAsyncThunk<
   }
 >('compareSlice/export', async (id, thunkApi) => {
   const content = thunkApi.getState().compare.entities[id]!.content;
-
-  const blob = new Blob([JSON.stringify(genBack(content))], {
-    type: 'application/json',
+  const isJs = thunkApi.getState().file.entities[id]!.fileName.endsWith('js')
+  const type = isJs ? 'text/plain' : 'application/json'
+  const genBackContent = isJs ? `export default ${genBack(content)}` :JSON.stringify(genBack(content))
+  const blob = new Blob([genBackContent], {
+    type: type,
   });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'export.json';
+  link.download = isJs ? 'export.js' : 'export.json';
   link.click();
   URL.revokeObjectURL(url);
 });
